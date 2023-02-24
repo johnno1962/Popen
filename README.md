@@ -8,5 +8,6 @@ Bring no-frills UNIX IPC back into Swift. For example:
     while let line = inp?.readLine() {
         out?.print(line)
     }
+    pclose(inp)
     pclose(out)
 ```

@@ -50,11 +50,12 @@ extension UnsafeMutablePointer:
     }
 
     public func readAll() -> String {
+        defer { pclose(self) }
         return reduce("", +)
     }
 
     @discardableResult
     public func print(_ line: String) -> Int32 {
-        fputs(line, self)
+        return fputs(line, self)
     }
 }
