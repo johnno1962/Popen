@@ -10,7 +10,6 @@ import Foundation
 @_silgen_name("popen")
 public func popen(_: UnsafePointer<CChar>, _: UnsafePointer<CChar>) -> UnsafeMutablePointer<FILE>!
 @_silgen_name("pclose")
-@discardableResult
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> Int32
 
 // Basic extensions on UnsafeMutablePointer<FILE> to
@@ -49,8 +48,8 @@ extension UnsafeMutablePointer:
         return offset > 0 ? String(cString: buffer) : nil
     }
 
-    public func readAll() -> String {
-        defer { pclose(self) }
+    public func readAll(close: Bool = false) -> String {
+        defer { if close { _ = pclose(self) } }
         return reduce("", +)
     }
 
