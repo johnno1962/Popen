@@ -2,6 +2,12 @@
 //  Popen.swift
 //  Popen
 //
+//  Re-surface the popen() and pclose() functions
+//  which can be ued to run shell commands on macOS
+//  (and in the simulator). Open for read to process
+//  output of command, write to send std input to the
+//  command. The command is parsed and run by the shell.
+//
 //  Created by John Holdsworth on 24/02/2023.
 //
 
