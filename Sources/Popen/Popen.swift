@@ -18,6 +18,25 @@ public func popen(_: UnsafePointer<CChar>, _: UnsafePointer<CChar>) -> UnsafeMut
 @_silgen_name("pclose")
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> Int32
 
+public struct Popen {
+    
+    /// Alternate version of system() call returning stdout as a String.
+    /// Can also return a string of errors only if there is a failure status.
+    /// - Parameters:
+    ///   - cmd: Command to execute
+    ///   - errors: Switch between returning String on sucess or failure.
+    /// - Returns: Output of command or errors on failure if errors is true.
+    static public func system(_ cmd: String, errors: Bool = false) -> String? {
+        let cmd = cmd + (errors ? " 2>&1" : "")
+        guard let outfp = popen(cmd, "r") else {
+            return "popen(\"\(cmd)\") failed."
+        }
+        let output = outfp.readAll()
+        let failed = pclose(outfp) >> 8 != EXIT_SUCCESS
+        return failed == errors ? output : nil
+    }
+}
+
 // Basic extensions on UnsafeMutablePointer<FILE> to
 // read the output of a shell command line by line.
 // In conjuntion with popen() this is useful as
