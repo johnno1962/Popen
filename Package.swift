@@ -21,5 +21,8 @@ let package = Package(
         .target(
             name: "Popen",
             dependencies: []),
+        .testTarget(
+            name: "PopenTests",
+            dependencies: ["Popen"]),
     ]
 )
