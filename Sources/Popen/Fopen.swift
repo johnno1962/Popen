@@ -24,7 +24,7 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
         case absolute(_ offset: Int)
         case relative(_ offset: Int)
         case fromEnd(_ offset: Int)
-        var args: (offset: Int, seek: CInt) {
+        var args: (offset: Int, whence: CInt) {
             switch self {
             case .absolute(let offset):
                 return (offset, SEEK_SET)
@@ -57,6 +57,7 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
         self.init(stream: fmemopen(buffer, count, mode.rawValue))
     }
 
+    #if canImport(Darwin)
     public convenience init?(cookie: UnsafeRawPointer?,
         reader: @convention(c) (
             _ cookie: UnsafeMutableRawPointer?,
@@ -74,10 +75,11 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
             _ cookie: UnsafeMutableRawPointer?) -> CInt) {
         self.init(stream: funopen(cookie, reader, writer, seeker, closer))
     }
+    #endif
 
     open func seek(to position: FILESeek) -> CInt {
         let args = position.args
-        return fseek(streamHandle, args.offset, args.seek)
+        return fseek(streamHandle, args.offset, args.whence)
     }
 
     open func tell() -> Int {
