@@ -4,6 +4,7 @@
 //
 //  Created by John Holdsworth on 29/10/2023.
 //  Repo: https://github.com/johnno1962/Popen
+//  $Id: //depot/Popen/Sources/Popen/Fopen.swift#4 $
 //
 //  Abstractions on stdio files born out of
 //  frustration with the woeful NSFileHandle.
@@ -12,12 +13,25 @@
 import Foundation
 
 open class Fopen: FILEStream, Sequence, IteratorProtocol {
-    public enum FILEMode: String {
-        case read = "r"
-        case both = "r+"
-        case write = "w"
-        case append = "a"
-        case new = "wx"
+    public enum FILEMode {
+        public init(_ rawValue: String) {
+            self = .other(rawValue)
+        }
+
+        static public let read = Self("r")
+        static public let both = Self("r+")
+        static public let write = Self("w")
+        static public let append =  Self("a")
+        static public let new = Self("wx")
+
+        case other(_ mode: String)
+
+        var mode: String {
+            switch self {
+            case .other(let mode):
+                return mode
+            }
+        }
     }
 
     public enum FILESeek {
@@ -45,33 +59,34 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
     }
 
     public convenience init?(path: String, mode: FILEMode = .read) {
-        self.init(stream: fopen(path, mode.rawValue))
+        self.init(stream: fopen(path, mode.mode))
     }
 
     public convenience init?(fd: CInt, mode: FILEMode = .read) {
-        self.init(stream: fdopen(fd, mode.rawValue))
+        self.init(stream: fdopen(fd, mode.mode))
     }
 
+    @available(OSX 10.13, *)
     public convenience init?(buffer: UnsafeMutableRawPointer,
                              count: Int, mode: FILEMode = .read) {
-        self.init(stream: fmemopen(buffer, count, mode.rawValue))
+        self.init(stream: fmemopen(buffer, count, mode.mode))
     }
 
     #if canImport(Darwin)
     public convenience init?(cookie: UnsafeRawPointer?,
-        reader: @convention(c) (
+        reader: @escaping @convention(c) (
             _ cookie: UnsafeMutableRawPointer?,
             _ buffer: UnsafeMutablePointer<CChar>?,
             _ count: CInt) -> CInt,
-        writer: @convention(c) (
+        writer: @escaping @convention(c) (
             _ cookie: UnsafeMutableRawPointer?,
             _ buffer: UnsafePointer<CChar>?,
             _ count: CInt) -> CInt,
-        seeker: @convention(c) (
+        seeker: @escaping @convention(c) (
             _ cookie: UnsafeMutableRawPointer?,
             _ position: fpos_t,
             _ relative: CInt) -> fpos_t,
-        closer: @convention(c) (
+        closer: @escaping @convention(c) (
             _ cookie: UnsafeMutableRawPointer?) -> CInt) {
         self.init(stream: funopen(cookie, reader, writer, seeker, closer))
     }

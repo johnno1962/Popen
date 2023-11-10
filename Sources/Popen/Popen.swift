@@ -4,6 +4,7 @@
 //
 //  Created by John Holdsworth on 24/02/2023.
 //  Repo: https://github.com/johnno1962/Popen
+//  $Id: //depot/Popen/Sources/Popen/Popen.swift#8 $
 //
 //  See: https://c-for-dummies.com/blog/?p=1418
 //
@@ -53,7 +54,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
     open var exitStatus: CInt?
 
     public init?(cmd: String, mode: Fopen.FILEMode = .read) {
-        guard let handle = popen(cmd, mode.rawValue) else {
+        guard let handle = popen(cmd, mode.mode) else {
             return nil
         }
         streamHandle = handle
@@ -75,7 +76,8 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
 
 extension UnsafeMutablePointer: FILEStream,
     Sequence, IteratorProtocol where Pointee == FILE {
-    public var streamHandle: UnsafeMutablePointer<FILE> { return self }
+    public typealias Element = String
+    public var streamHandle: Self { return self }
 }
 
 // Basic extensions on UnsafeMutablePointer<FILE> 
