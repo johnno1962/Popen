@@ -4,7 +4,6 @@
 //
 //  Created by John Holdsworth on 29/10/2023.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Fopen.swift#4 $
 //
 //  Abstractions on stdio files born out of
 //  frustration with the woeful NSFileHandle.
@@ -55,7 +54,7 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
     public init?(stream: UnsafeMutablePointer<FILE>?) {
         guard let stream = stream else { return nil }
         streamHandle = stream
-        openFILEStreams += 1
+        Popen.openFILEStreams += 1
     }
 
     public convenience init?(path: String, mode: FILEMode = .read) {
@@ -103,6 +102,6 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
 
     deinit {
         _ = fclose(streamHandle)
-        openFILEStreams -= 1
+        Popen.openFILEStreams -= 1
     }
 }

@@ -4,7 +4,6 @@
 //
 //  Created by John Holdsworth on 24/02/2023.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Popen.swift#8 $
 //
 //  See: https://c-for-dummies.com/blog/?p=1418
 //
@@ -27,13 +26,12 @@ public func popen(_: UnsafePointer<CChar>,
 @_silgen_name("pclose")
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> CInt
 
-var openFILEStreams = 0
-
 public protocol FILEStream {
     var streamHandle: UnsafeMutablePointer<FILE> { get }
 }
 
 open class Popen: FILEStream, Sequence, IteratorProtocol {
+    static var openFILEStreams = 0
 
     /// Alternate version of system() call returning stdout as a String.
     /// Can also return a string of errors only if there is a failure status.
@@ -58,7 +56,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
             return nil
         }
         streamHandle = handle
-        openFILEStreams += 1
+        Self.openFILEStreams += 1
     }
 
     open func terminatedOK() -> Bool {
@@ -70,7 +68,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         if exitStatus == nil {
             _ = terminatedOK()
         }
-        openFILEStreams -= 1
+        Self.openFILEStreams -= 1
     }
 }
 
