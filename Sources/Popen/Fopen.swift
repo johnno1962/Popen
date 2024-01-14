@@ -65,7 +65,7 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
         self.init(stream: fdopen(fd, mode.mode))
     }
 
-    @available(OSX 10.13, *)
+    @available(OSX 10.13, iOS 11.0, *)
     public convenience init?(buffer: UnsafeMutableRawPointer,
                              count: Int, mode: FILEMode = .read) {
         self.init(stream: fmemopen(buffer, count, mode.mode))
