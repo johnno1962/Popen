@@ -27,11 +27,25 @@ public func popen(_: UnsafePointer<CChar>,
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> CInt
 
 public protocol FILEStream {
-    var streamHandle: UnsafeMutablePointer<FILE> { get }
+    var fileStream: UnsafeMutablePointer<FILE> { get }
 }
 
 open class Popen: FILEStream, Sequence, IteratorProtocol {
     static var openFILEStreams = 0
+    public static var shellCommand = "/bin/bash"
+
+    /// Execute a shell command
+    /// - Parameters:
+    ///   - cmd: Command to execute
+    ///   - shell: Shell to use for the command.
+    /// - Returns: true if command exited without error.
+    open class func shell(cmd: String, shell: String = shellCommand) -> Bool {
+        guard let stdin = Popen(cmd: shell, mode: .write) else {
+            return false
+        }
+        stdin.print(cmd)
+        return stdin.terminatedOK()
+    }
 
     /// Alternate version of system() call returning stdout as a String.
     /// Can also return a string of errors only if there is a failure status.
@@ -48,19 +62,19 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         return outfp.terminatedOK() != errors ? output : nil
     }
 
-    open var streamHandle: UnsafeMutablePointer<FILE>
+    open var fileStream: UnsafeMutablePointer<FILE>
     open var exitStatus: CInt?
 
     public init?(cmd: String, mode: Fopen.FILEMode = .read) {
         guard let handle = popen(cmd, mode.mode) else {
             return nil
         }
-        streamHandle = handle
+        fileStream = handle
         Self.openFILEStreams += 1
     }
 
     open func terminatedOK() -> Bool {
-        exitStatus = pclose(streamHandle)
+        exitStatus = pclose(fileStream)
         return exitStatus! >> 8 == EXIT_SUCCESS
     }
 
@@ -75,7 +89,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
 extension UnsafeMutablePointer: FILEStream,
     Sequence, IteratorProtocol where Pointee == FILE {
     public typealias Element = String
-    public var streamHandle: Self { return self }
+    public var fileStream: Self { return self }
 }
 
 // Basic extensions on UnsafeMutablePointer<FILE> 
@@ -94,9 +108,9 @@ extension FILEStream {
         var buffer = [CChar](repeating: 0, count: bufferSize)
 
         while let line = fgets(&buffer[offset],
-            CInt(buffer.count-offset), streamHandle) {
-            offset += strlen(line)
-            if buffer[offset-1] == UInt8(ascii: "\n") {
+            CInt(buffer.count-offset), fileStream) {
+            offset += strlen(line+offset)
+            if offset > 0 && buffer[offset-1] == UInt8(ascii: "\n") {
                 if strippingNewline {
                     buffer[offset-1] = 0
                 }
@@ -113,24 +127,29 @@ extension FILEStream {
     }
 
     public func readAll(close: Bool = false) -> String {
-        return streamHandle.joined(separator: "\n") + "\n"
+        defer { if close { _ = pclose(fileStream) } }
+        var out = ""
+        while let line = readLine(strippingNewline: false) {
+            out += line
+        }
+        return out
     }
 
     @discardableResult
     public func print(_ items: Any..., separator: String = " ",
                       terminator: String = "\n") -> CInt {
         return fputs(items.map { "\($0)" }.joined(
-            separator: separator)+terminator, streamHandle)
+            separator: separator)+terminator, fileStream)
     }
 
     public func write(data: Data) -> Int {
         return withUnsafeBytes(of: data) { buffer in
-            fwrite(buffer.baseAddress, 1, buffer.count, streamHandle)
+            fwrite(buffer.baseAddress, 1, buffer.count, fileStream)
         }
     }
 
     @discardableResult
     public func flush() -> CInt {
-        return fflush(streamHandle)
+        return fflush(fileStream)
     }
 }

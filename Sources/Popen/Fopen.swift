@@ -49,11 +49,11 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
         }
     }
 
-    open var streamHandle: UnsafeMutablePointer<FILE>
+    open var fileStream: UnsafeMutablePointer<FILE>
 
     public init?(stream: UnsafeMutablePointer<FILE>?) {
         guard let stream = stream else { return nil }
-        streamHandle = stream
+        fileStream = stream
         Popen.openFILEStreams += 1
     }
 
@@ -93,15 +93,15 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
 
     open func seek(to position: FILESeek) -> CInt {
         let args = position.args
-        return fseek(streamHandle, args.offset, args.whence)
+        return fseek(fileStream, args.offset, args.whence)
     }
 
     open func tell() -> Int {
-        return ftell(streamHandle)
+        return ftell(fileStream)
     }
 
     deinit {
-        _ = fclose(streamHandle)
+        _ = fclose(fileStream)
         Popen.openFILEStreams -= 1
     }
 }
