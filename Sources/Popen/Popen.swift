@@ -31,7 +31,7 @@ public protocol FILEStream {
 }
 
 open class Popen: FILEStream, Sequence, IteratorProtocol {
-    static var openFILEStreams = 0
+    static var openFILEStreams = 0, initialLineBufferSize = 10_000
     public static var shellCommand = "/bin/bash"
 
     /// Execute a shell command
@@ -62,6 +62,30 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         return outfp.terminatedOK() != errors ? output : nil
     }
 
+    #if os(macOS)
+    /// Alternate version of system() call returning stdout as a String.
+    /// Can also return a string of errors only if there is a failure status.
+    /// - Parameters:
+    ///   - exec: Binary to execute
+    ///   - arguments: Arguments to pass to executable
+    ///   - errors: Switch between returning String on sucess or failure.
+    /// - Returns: Output of command or errors on failure if errors is true.
+    open class func task(exec: String, arguments: [String] = [],
+                         cd: String = "/tmp", errors: Bool? = false) -> String? {
+        let proc = Process(), pipe = Pipe()
+        proc.launchPath = exec
+        proc.arguments = arguments
+        proc.currentDirectoryPath = cd
+        proc.standardOutput = pipe.fileHandleForWriting
+        proc.standardError = pipe.fileHandleForWriting
+        proc.launch()
+        close(pipe.fileHandleForWriting.fileDescriptor)
+        let output = Fopen(fd: pipe.fileHandleForReading.fileDescriptor)?.readAll()
+        proc.waitUntilExit()
+        return (proc.terminationStatus == EXIT_SUCCESS) != errors ? output : nil
+    }
+    #endif
+
     open var fileStream: UnsafeMutablePointer<FILE>
     open var exitStatus: CInt?
 
@@ -75,7 +99,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
 
     open func terminatedOK() -> Bool {
         exitStatus = pclose(fileStream)
-        return exitStatus! >> 8 == EXIT_SUCCESS
+        return exitStatus == EXIT_SUCCESS
     }
 
     deinit {
@@ -92,7 +116,7 @@ extension UnsafeMutablePointer: FILEStream,
     public var fileStream: Self { return self }
 }
 
-// Basic extensions on UnsafeMutablePointer<FILE> 
+// Basic extensions on UnsafeMutablePointer<FILE>
 // and Popen to read the output of a shell command
 // line by line. In conjuntion with popen() this is
 // useful as Task/FileHandle does not provide a
@@ -104,12 +128,12 @@ extension FILEStream {
     }
 
     public func readLine(strippingNewline: Bool = true) -> String? {
-        var bufferSize = 10_000, offset = 0
-        var buffer = [CChar](repeating: 0, count: bufferSize)
+        var buffer = [CChar](repeating: 0, count: Popen.initialLineBufferSize)
+        var offset = 0
 
         while let line = fgets(&buffer[offset],
             CInt(buffer.count-offset), fileStream) {
-            offset += strlen(line+offset)
+            offset += strlen(line)
             if offset > 0 && buffer[offset-1] == UInt8(ascii: "\n") {
                 if strippingNewline {
                     buffer[offset-1] = 0
@@ -117,8 +141,7 @@ extension FILEStream {
                 return String(cString: buffer)
             }
 
-            bufferSize *= 2
-            var grown = [CChar](repeating: 0, count: bufferSize)
+            var grown = [CChar](repeating: 0, count: buffer.count*2)
             strcpy(&grown, buffer)
             buffer = grown
         }
