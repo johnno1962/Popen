@@ -7,6 +7,7 @@
 //  Simple way to get information on file.
 //
 
+#if DEBUG || !DEBUG_ONLY
 import Foundation
 
 public typealias Fstat = stat
@@ -50,4 +51,5 @@ extension timespec {
     var date: Date { Date(timeIntervalSince1970: TimeInterval(tv_sec) +
                           TimeInterval(tv_nsec)/TimeInterval(NSEC_PER_SEC)) }
 }
+#endif
 #endif

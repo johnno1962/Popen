@@ -7,6 +7,7 @@
 //  List of files matching pattern from shell.
 //
 
+#if DEBUG || !DEBUG_ONLY
 import Foundation
 
 public class Glob: Sequence, IteratorProtocol {
@@ -32,3 +33,4 @@ public class Glob: Sequence, IteratorProtocol {
         globfree(&pglob)
     }
 }
+#endif

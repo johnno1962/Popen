@@ -9,6 +9,7 @@
 //  frustration with the woeful NSFileHandle.
 //
 
+#if DEBUG || !DEBUG_ONLY
 import Foundation
 
 open class Fopen: FILEStream, Sequence, IteratorProtocol {
@@ -105,3 +106,4 @@ open class Fopen: FILEStream, Sequence, IteratorProtocol {
         Popen.openFILEStreams -= 1
     }
 }
+#endif
