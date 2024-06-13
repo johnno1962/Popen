@@ -28,7 +28,7 @@ public func popen(_: UnsafePointer<CChar>,
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> CInt
 
 open class Popen: FILEStream, Sequence, IteratorProtocol {
-    static var openFILEStreams = 0, initialLineBufferSize = 10_000
+    public static var openFILEStreams = 0, initialLineBufferSize = 10_000
     public static var shellCommand = "/bin/bash"
 
     /// Execute a shell command
@@ -71,7 +71,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
                          cd: String = "/tmp", errors: Bool? = false) -> String? {
         let task = Topen(exec: exec, arguments: arguments, cd: cd)
         let output = task.readAll()
-        return task.terminatedOK()  != errors ? output : nil
+        return task.terminatedOK() != errors ? output : nil
     }
     #endif
 
