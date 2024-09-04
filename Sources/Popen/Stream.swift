@@ -14,7 +14,7 @@ public protocol FILEStream {
 }
 
 extension UnsafeMutablePointer: FILEStream,
-    Sequence, IteratorProtocol where Pointee == FILE {
+    Swift.Sequence, Swift.IteratorProtocol where Pointee == FILE {
     public typealias Element = String
     public var fileStream: Self { return self }
 }
@@ -68,10 +68,9 @@ extension FILEStream {
             separator: separator)+terminator, fileStream)
     }
 
-    public func write(data: Data) -> Int {
-        return withUnsafeBytes(of: data) { buffer in
-            fwrite(buffer.baseAddress, 1, buffer.count, fileStream)
-        }
+    @discardableResult
+    public func write(data: NSData) -> Int {
+        return fwrite(data.bytes, 1, data.count, fileStream)
     }
 
     @discardableResult
