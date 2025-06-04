@@ -4,6 +4,8 @@
 //  Swifty operations on a stdio FILE stream.
 //
 //  Created by John Holdsworth on 03/06/2024.
+//  Repo: https://github.com/johnno1962/Popen
+//  $Id: //depot/Popen/Sources/Popen/Stream.swift#4 $
 //
 
 #if DEBUG || !DEBUG_ONLY

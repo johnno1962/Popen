@@ -3,6 +3,7 @@
 //
 //  Created by John Holdsworth on 03/12/2023.
 //  Repo: https://github.com/johnno1962/Popen
+//  $Id: //depot/Popen/Sources/Popen/Glob.swift#3 $
 //
 //  List of files matching pattern from shell.
 //
