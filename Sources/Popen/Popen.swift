@@ -4,7 +4,7 @@
 //
 //  Created by John Holdsworth on 24/02/2023.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Popen.swift#8 $
+//  $Id: //depot/Popen/Sources/Popen/Popen.swift#9 $
 //
 //  See: https://c-for-dummies.com/blog/?p=1418
 //
@@ -29,7 +29,10 @@ public func popen(_: UnsafePointer<CChar>,
 public func pclose(_: UnsafeMutablePointer<FILE>?) -> CInt
 
 open class Popen: FILEStream, Sequence, IteratorProtocol {
-    public static var openFILEStreams = 0, initialLineBufferSize = 10_000
+    public static var openedFILEStreams = 0, closedFILEStreams = 0
+    public static var openFILEStreams: Int {
+        return openedFILEStreams - closedFILEStreams }
+    public static var initialLineBufferSize = 10_000
     public static var shellCommand = "/bin/bash"
 
     /// Execute a shell command
@@ -80,7 +83,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
     open var exitStatus: CInt?
 
     public init(stream: UnsafeMutablePointer<FILE>) {
-        Self.openFILEStreams += 1
+        Self.openedFILEStreams += 1
         fileStream = stream
     }
 
@@ -100,7 +103,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
 
     deinit {
         _ = terminatedOK()
-        Self.openFILEStreams -= 1
+        Self.closedFILEStreams += 1
     }
 }
 #endif

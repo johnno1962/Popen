@@ -5,7 +5,7 @@
 //
 //  Created by John H on 03/06/2024.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Topen.swift#2 $
+//  $Id: //depot/Popen/Sources/Popen/Topen.swift#3 $
 //
 
 #if DEBUG || !DEBUG_ONLY
@@ -33,6 +33,10 @@ open class Topen: Popen {
         task.launch()
         close(pipe.fileHandleForWriting.fileDescriptor)
         super.init(stream: fdopen(pipe.fileHandleForReading.fileDescriptor, "r"))
+    }
+
+    open func terminate() {
+        task.interrupt()
     }
 
     open override func terminatedOK() -> Bool {
