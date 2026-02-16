@@ -5,7 +5,7 @@
 //
 //  Created by John H on 03/06/2024.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Topen.swift#3 $
+//  $Id: //depot/Popen/Sources/Popen/Topen.swift#4 $
 //
 
 #if DEBUG || !DEBUG_ONLY
@@ -21,15 +21,20 @@ open class Topen: Popen {
     /// - Parameters:
     ///   - exec: Binary to execute
     ///   - arguments: Arguments to pass to executable
-    ///   - cd: working directory.
+    ///   - cd: working directory
+    ///   - env: UNIX environment
     /// - Returns: Output of command or errors on failure if errors is true.
-    public init(exec: String, arguments: [String] = [], cd: String = "/tmp") {
+    public init(exec: String, arguments: [String] = [], cd: String = "/tmp",
+                env: [String: String]? = nil) {
         task = Process()
         task.launchPath = exec
         task.arguments = arguments
         task.currentDirectoryPath = cd
         task.standardOutput = pipe.fileHandleForWriting
         task.standardError = pipe.fileHandleForWriting
+        if let env = env {
+            task.environment = env
+        }
         task.launch()
         close(pipe.fileHandleForWriting.fileDescriptor)
         super.init(stream: fdopen(pipe.fileHandleForReading.fileDescriptor, "r"))
