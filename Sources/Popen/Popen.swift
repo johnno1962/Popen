@@ -4,7 +4,7 @@
 //
 //  Created by John Holdsworth on 24/02/2023.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Popen.swift#9 $
+//  $Id: //depot/Popen/Sources/Popen/Popen.swift#10 $
 //
 //  See: https://c-for-dummies.com/blog/?p=1418
 //
@@ -55,12 +55,29 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
     ///   - errors: Switch between returning String on sucess or failure.
     /// - Returns: Output of command or errors on failure if errors is true.
     open class func system(_ cmd: String, errors: Bool? = false) -> String? {
+        #if os(macOS)
+        // Thanks https://github.com/johnno1962/InjectionNext/issues/118
+        let process = Foundation.Process()
+        let pipe = Foundation.Pipe()
+        process.launchPath = shellCommand
+        process.arguments = ["-c", cmd]
+        process.standardOutput = pipe
+        if errors != false {
+            process.standardError = pipe
+        }
+        process.launch()
+        process.waitUntilExit()
+        let statusOK = process.terminationStatus == EXIT_SUCCESS
+        let output = pipe.fileHandleForReading.readDataToEndOfFile()
+        return statusOK != errors ? String(data: output, encoding: .utf8) : nil
+        #else
         let cmd = cmd + (errors != false ? " 2>&1" : "")
         guard let outfp = Popen(cmd: cmd) else {
             return "popen(\"\(cmd)\") failed."
         }
         let output = outfp.readAll()
         return outfp.terminatedOK() != errors ? output : nil
+        #endif
     }
 
     #if os(macOS)
