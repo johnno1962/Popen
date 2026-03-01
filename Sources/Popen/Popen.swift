@@ -4,7 +4,7 @@
 //
 //  Created by John Holdsworth on 24/02/2023.
 //  Repo: https://github.com/johnno1962/Popen
-//  $Id: //depot/Popen/Sources/Popen/Popen.swift#10 $
+//  $Id: //depot/Popen/Sources/Popen/Popen.swift#11 $
 //
 //  See: https://c-for-dummies.com/blog/?p=1418
 //
@@ -66,9 +66,10 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
             process.standardError = pipe
         }
         process.launch()
+        let promise = readPipeInBackground(pipe)
         process.waitUntilExit()
         let statusOK = process.terminationStatus == EXIT_SUCCESS
-        let output = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = promise()
         return statusOK != errors ? String(data: output, encoding: .utf8) : nil
         #else
         let cmd = cmd + (errors != false ? " 2>&1" : "")
@@ -78,6 +79,37 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         let output = outfp.readAll()
         return outfp.terminatedOK() != errors ? output : nil
         #endif
+    }
+
+    // Thanks https://github.com/hylo-lang/gyb-swift/blob/5fe38a2ec40911c3e9a951ed405dbe7ee706ebe0/Sources/gyb-swift/ProcessUtilities.swift#L125-L219
+    /// Starts reading all data from `pipe` using event-driven I/O.
+    ///
+    /// Returns a closure that blocks until reading completes and returns the data.
+    /// This prevents pipe buffer deadlocks by draining pipes while the process runs.
+    /// Uses non-blocking I/O with readability handlers for efficiency.
+    open class func readPipeInBackground(_ pipe: Pipe) -> () -> Data {
+      // Box to safely share mutable state across concurrency boundary
+      final class DataBox {
+        var data = Data()
+      }
+      let box = DataBox()
+      let group = DispatchGroup()
+
+      group.enter()
+      pipe.fileHandleForReading.readabilityHandler = { handle in
+        let chunk = handle.availableData
+        if chunk.isEmpty {  // EOF on the pipe
+          pipe.fileHandleForReading.readabilityHandler = nil
+          group.leave()
+        } else {
+          box.data.append(chunk)
+        }
+      }
+
+      return {
+        group.wait()
+        return box.data
+      }
     }
 
     #if os(macOS)
