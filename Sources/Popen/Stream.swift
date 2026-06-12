@@ -15,11 +15,16 @@ public protocol FILEStream {
     var fileStream: UnsafeMutablePointer<FILE> { get }
 }
 
-extension UnsafeMutablePointer: FILEStream,
-    Swift.Sequence, Swift.IteratorProtocol where Pointee == FILE {
+extension UnsafeMutablePointer: FILEStream where Pointee == FILE {
     public typealias Element = String
     public var fileStream: Self { return self }
 }
+
+#if !compiler(>=6.4) // Xcode < 27
+extension UnsafeMutablePointer:
+    Swift.Sequence, Swift.IteratorProtocol where Pointee == FILE {
+}
+#endif
 
 // Basic extensions on UnsafeMutablePointer<FILE>
 // and Popen to read the output of a shell command
