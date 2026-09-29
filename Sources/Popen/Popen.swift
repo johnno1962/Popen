@@ -55,7 +55,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
     ///   - errors: Switch between returning String on sucess or failure.
     /// - Returns: Output of command or errors on failure if errors is true.
     open class func system(_ cmd: String, errors: Bool? = false) -> String? {
-        #if os(macOS)
+        #if false && os(macOS) // backed out, let's keep IPC popen() simple.
         // Thanks https://github.com/johnno1962/InjectionNext/issues/118
         let process = Foundation.Process()
         let pipe = Foundation.Pipe()
@@ -81,6 +81,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         #endif
     }
 
+    #if false
     // Thanks https://github.com/hylo-lang/gyb-swift/blob/5fe38a2ec40911c3e9a951ed405dbe7ee706ebe0/Sources/gyb-swift/ProcessUtilities.swift#L125-L219
     /// Starts reading all data from `pipe` using event-driven I/O.
     ///
@@ -111,6 +112,7 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
         return box.data
       }
     }
+    #endif
 
     #if os(macOS)
     /// Alternate version of system() call returning stdout as a String.
@@ -141,7 +143,10 @@ open class Popen: FILEStream, Sequence, IteratorProtocol {
             return nil
         }
         self.init(stream: stream)
-    }
+        if mode == .both {
+            setvbuf(fileStream,  nil, _IONBF, 0)
+        }
+   }
 
     open func terminatedOK() -> Bool {
         if exitStatus == nil {

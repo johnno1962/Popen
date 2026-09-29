@@ -14,7 +14,7 @@
 import Foundation
 
 open class Fopen: FILEStream, Sequence, IteratorProtocol {
-    public enum FILEMode {
+    public enum FILEMode: Equatable {
         public init(_ rawValue: String) {
             self = .other(rawValue)
         }
